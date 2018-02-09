@@ -1,0 +1,580 @@
+% !TEX encoding = UTF-8 Unicode
+% !TEX TS-program = xelatex
+
+Modélisation / Optimisation numérique
+
+
+\section{Notation & Vocabulaire} % (fold)
+\label{sec:notation_vocabulaire}
+On s'intéresse dans ce coure à la modélisation la résolution numérique le problèmes d'optimisation (P) la forme: 
+$\Min\{J(x):x\in X}$ où:\\
+-* $X$ est un sous-ensemble de $E$, où $(E,\norm{•})$ espace vectoriel normé (Banach, surtant $E=\R^d$ muni de la norme Euclidienne).\\
+-* $J: X->\R\cup\{+∞\}$ est la fonction objectif (target) ou coût (cost). \\
+-* la notation $\Min$ suppose que $J$ atteint effectivement son minimum sur $X$: il existe au moins une solution $\bar x$.
+Quand on ignore si solution existe, on écrit $\Inf$.
+
+Une solution $\bar x$ du problème ($P$) est aussi appelée solution optimale de ($P$), on dit aussi que $\bar x$ est un minimiser de $J$ sur $X$, on que $J$ atteint son minimum sur $X$ en $\bar x$.
+
+Un élément $x\in E$ est dit admissible pour (P) si $x\in X$. $X$ est appelé contrainte du problème (P).\\
+-* si $X=E$: on dit que $X$ est une contrainte like (free constraint), on que (P) est sans contrainte (constraint free).\\
+-* si $X=\{x\in E : h_1(x)=0,...,h_q(x)=0\}$ on dit que $X$ est formé de contraintes égalité.\\
+-* si $X=\{x\in E: g_1(x)≤0,...,g_m(x)≤0\}$ on dit que $X$ est formé de contraintes inégalité.
+
+Notation: soit $x,y\in\R^n$, on note $x≥y$ si $\forall i\ x_i≥y_i$, on peut alors écrire:
+$\{x\in E, g_1(x)≤0,...,g_n(x)≤0\}=\{x\in E: g(x)≤\}$
+où $\mqty{g: E->\R^m\\x|->\vc{g_1(x)\\\vdots\\g_m(x)}}$
+
+Remarque: les vecteurs seront souvent representes en colonnes.
+
+\begin{example}
+	\begin{enumerate}
+		\item identification de paramètres: on reçoit un signal $\mqty{f:\R->\R\\t|->ae^{lt}\cos(xt+d)}$
+		où $a,b,c,d$ sont des réels à déterminer. On dispose d'un échantillon de valeurs $(t_i,y_i)_{1≤i≤N}$. L'identification ou sans des moindre carres consiste à résoudre.
+		$\Min \{J(x)=∑_{i=1}^N(y_i-f(t_i))^2: x=(a,b,c,d)\in\R^4\}$. c'est-à-dire on minimise la somme des erreurs entre $f(t_i)$ et $y_i$, où la mesure de l'erreur set donnée par le caré de la distance entre $y_i$ et $f(t_i)$: 
+		$|y_i-f(t_i)|^2=(y_i-f(t_i))^2$.
+		\begin{remark}
+			La choix de mettre au caré est arbitraire, mais rend le problème plus facile. On pourrait considerer $J(x)=\max_{1≤i≤N}|y_i-f(t_i)|$, mais $J$ n'est pas différentiable.
+			La problème est à contrainte libre : $X=E=\R^4$.
+		\end{remark}
+		\item Boite le conserve cylindrique :
+		On cherche le rayon et la hauteur de la boite de conserve de plus grand volume ayant une surface fixée $S>0$ (qui represente la quantité de métal nécessaire à la fabrication de la boité):
+		
+		On veut résoudre:
+		$\sup\{πr^2h: 2xπr^2+2πrh=S, h≥0, r≥0\}$
+		
+		Ici on maximise $J(r,h)=πr^2h$ sous les contraintes: $X=\{(r,h)\in\R^2: 2πr(r+h)=S, r≥0, h≥0\}$.
+		\begin{remark}
+			Cela revient à minimiser $J$.
+		\end{remark}
+		\item Transport optimal (version discréte)
+		(Monge 1781, Kantorovich 1941-42) aux points $x_i\in\R^2$ on dispose de la quantité ou masse (a. amount) $M_i$ de marchandise (a. goods) aux points $y_j\in\R^2$ on a une demande $N_j$. Le transport d'une quantité $ε$ de marchandise de $x_i$ à $y_j$ coûte $c(x_i,y_i)$. (par example: $c(x_i,y_j)=|y_j-x_i|$ ou $c(x_i,y_i)=\sqrt{|y_j-x_j|}$). On suppose que l'offre globale est égale à la demande.
+		
+		$∑_{i=1}^mM_i=∑_{j=1}^nN_j$
+		
+		On cherche alors à résoudre:
+		$\Min\{J(l):=∑_{i=1}^m∑_{j=1}^nc(x_i,y_j)l_{ij}$:
+		$l\in\R^{m\times n}, l≥0\ \forall i\ ∑_{j=1}^nl_{ij}=M_i,\ \forall j\ ∑_{i=1}^nl_{ij}=N_j\}$ où $l_{ij}=$ quantité transportée de $x_i$ à $y_j$. Champs de recherche très actif depuis 20 ans.
+		
+		Le problème obtenu est un problème de programmation lineaire (a. linear programming) car toutes les contraintes (égalité et inégalité sont linearies (en fait affines)).
+		
+	\end{enumerate}
+\end{example}
+% section notation_vocabulaire (end)
+\section{Rappels de calcul differentiel} % (fold)
+\label{sec:rappels_de_calcul_differentiel}
+\begin{definition}
+	Soit $f:\R^N->\R^M$, on dit que $f$ est Fréchet différentiable au point $\tilde x$ (ou différentiable en $\tilde x$) si il existe une application lineaire $L:\R^N->\R^M$ telle que: $\forall x\ f(x)=f(\tilde x)+L•(x-\tilde x)+o(\norm{x-\tilde x})$ où $\frac{\norm{(x-\tilde x)}}{\norm{x-\tilde x}}\underset{x\to\tilde x}{\to} 0$.
+\end{definition}
+Dans ce cas, $L$ est notée $Df(\tilde x)$ et est appelée différentielle de $f$ en $\tilde x$.
+
+On dit que $f$ est de classe $C^1$ sur ouvert $U$ de $\R^N$ si $f$ est différentiable sur $U$ et $Df$ est continue sur $U$. On dit que $f$ est $C^k$ sur $U$ si $Df$ est $C^{k-1}$ sur $U$.
+
+\begin{remark}
+	-* $f$ est differentiable ou sens de Gateaux si il existe une application linèaire $L$ telle que:
+	$\forall v\in\R^n$, $\lim_{t\to 0}\frac{f(\tilde x+tv)-f(\tilde x)}t=L•v$. Si $f$ est Fréchet differentiable, alors $L=Df(\tilde x)$ -> ceci est un moyen d'identificer $Df(\tilde x)$.
+	
+	Si on note $\mqty{f:\R^N->\R^M\\x|->\vc{f_1(x)\\\vdots\\f_M(x)}}$ alors on identifie $Df(\tilde x)$ à la matrice $(\pdv{f_j}{x_i} (\tilde x))_{\substack{1≤i≤N\\1≤j≤M}}$ et dans ce cas la notation $Df(\tilde x)•v$ est le produit matriciel de $Df(\tilde x)$ avec le vecteur colonne $v$.
+	
+	Cas particulier:\\
+	-* $f:\R->\R$ on note $Df(\tilde t)=f'(\tilde t)$ et $f'(\tilde t)$ est le coefficient directeur de la tangente au graphe de $f$.\\
+	-* $f:\R->\R^d$ on note $Df(\tilde t)=f'(\tilde t)=\vc{f'_1(\tilde t)\\\vdots\\f'_d(\tilde t)}$ est le vecteur tangent au point $ρ(\tilde t)$ à la courbe $(f(t))_{t\in \R}$.\\
+	-* $f:\R^d->\R$ on identifie $Df(\tilde x)$ au gradient de $f$: $\nabla f(\tilde x)=\vc{\pdv{f}{x_1}(\tilde x)\\\vdots\\\pdv{f}{x_d})}$ et on écrit $Df(\tilde x)•v=\expval{\nabla f(\tilde x), v}$ où $\expval{•|•}$ est le produit scalaire usuel. Dans ce cas, $\nabla f(\tilde x)$ est le vecteur orthogonal à $\{x:f(x)=f(\tilde x)\}=\{f=f(\tilde x)\}$ qui indique ld direction de plus forte croissance de $f$.
+	
+\end{remark}
+
+En dimension $d=1$ $\{f=f(\tilde x)\}$ est en général réduit au point $\tilde x$, jointification de la propriété:
+
+soit $c:]-ε,ε[->\{f=f(\tilde x)\}\ t|->c(t)$ avec $c(0)=\tilde x$, alors $c'(0)$ est tangent à la courbe $(c(t))_{t\in]-ε,ε[}\subset \{f=f(\tilde x)\}$ donc $c'(0)$ est tangent à l'ensemble $\{f=f(\tilde)\}$ On a aussi: $\forall t\in ]-ε,ε[$, $f(c(t))=f(\tilde x)$ donc $(fºc)'(0)=0$. (remarque $fºc:]-ε,ε[->\R$) donc $Df(c(0))•c'(0)=0$ <=> $\expval{\nabla f(\tilde x),c'(0)}=0$ donc $\nabla f(\tilde x)$ est orthogonal au vecteur tangent $c'(0)$.
+
+$\{f=f(\tilde x)\}=\{x\in \R^d:f(x)=f(\tilde x)\}$
+
+exemple $f(x_1,x_2)=x_1^2+x_2^2$ $\{f=f(0,1)\}$ = cercle de centre $(0,0)$ et de rayon $1$.
+
+Corigé: $Df(\tilde x)=\left(\pdv{f_j}{x_i} (\tilde x)\right)_{i,j}=\mqty(\pdv{f_1}{x_1}&...&\pdv{f_1}{x_1}\\&...&\\\pdv{f_M}{x_1}&\pdv{f_M}{x_N}) $
+
+Si $f:\R^$$d->\R$, $Df(\tilde x)=(\pdv{f}{x_1}),...,\pdv{f}{x_d})={}^t\nabla f(\tilde x)$
+
+Si $f:\R^d->\R$ alors $\nabla f:\R^d->\R^d$ et si $f$ est deux fois différentiable $D^2 f:\R^d->\R^{d\times d}\ x|->(\pdv{f}{x_i}{x_j})_{1≤i,j≤d}$ et $D^2f(x)$ est une matrice symétrique (th. de Schwarz). On a alors la formule de Taylor-Youg: $f(x)=f(\tilde x)+\expval{\nabla f(\tilde x),x-\tilde x}+\frac12\expval{D^2f(\tilde x)(x-\tilde x),} $
+ 
+% section rappels_de_calcul_differentiel (end)
+
+% tierry champion begin lecture january 31 2018
+\chapter{Conditions d'optimalite} % (fold)
+\label{cha:conditions_d_optimalite}
+\section{Contraintes libres} % (fold)
+\label{sec:contraintes_libres}
+
+\begin{theorem}
+	Si $\bar x\in \R^d$ est une solution optimale de (P)
+		\[\min\{J(x):x\in\R^d\}\]
+	alors:
+	\begin{itemize}
+		\item si $J$ est differentiable en $\bar x$:
+			\[\grad J(\bar x)=0\]
+		\item si $J$ est deux fois différentiable en $\bar x$ alors $D^2J(\bar x)≥0$ sur $\R^d$.
+	\end{itemize}
+\end{theorem}
+\begin{notation}
+	Si $A\in M_d(\R)$ symétrique et $V$ est un sous-espace vectoriel de $\R^d$, alors:
+	\begin{itemize}
+		\item $A≥0$ sur $V$ signifie $\forall v\in V$, $\expval{Av, v}≥0$ (on dit que $A$ est semi-définie positive sur $V$)
+		\item Caractérisation:
+		$A≥0$ sur $\R^d$ <=> les valeurs propres de $A$ sont positives <=> les mineurs principaux de $A$ sont positifs.
+	\end{itemize}
+\end{notation}
+\begin{rappel}
+	Si $I\subset\{1,...,d\}$ le mineur principal $m_I$ de $A$ est: $m_I(A)=\det((A_{ij})_{i,j\in I})$.
+\end{rappel}
+\begin{example}
+	Si $d=2$, si $λ_1$ et $λ_2$ sont les valeurs propres de $A$, on calcule:
+	$th(A)=λ_1+λ_2$; $\det(A)=λ_1\timesλ_2$ alors:
+		\[\left\{\mqty{λ_1≥0\\λ_2≥0}\right. \iff \left\{\mqty{th(A)≥0\\\det(A)≥0}\right.\]
+		et les mineurs principaux de $A$ sont $A_{11}$, $A_{22}$ et $\det(A)$
+		
+	Si $d=3$:
+	\begin{itemize}
+		\item Soit on calcule les valeurs propres
+		\item Soit on calcule $I=\{1,2\}$
+			\[A_{11} I=\{1\},A_{22},A_{33}, \det\mqty(A_{11}&A_{12}\\A_{21}&A_{22})\]
+			$\det (11 13 31 33) I=1,3 $,$\det (22 23 32 33) I=2,3$ et $\det(A) I=1,2,3$
+	\end{itemize}
+\end{example}
+\begin{remark}
+	La notation $A≥αI$ signifie $A-αI≥0$ et en particulier:
+		\[ \forall v, \expval{Av,v}≥α\norm{v}^2\]
+\end{remark}
+\begin{proof}[preuve du théorème]
+	Soit $v\in\R^d$, on pose $\mqty{f:\R&->\R\\t&|->J(\bar x+tv)}$ alors on calcule:
+	\[f'(t)=\expval{\grad J(\bar x+tv),v}\]
+	et
+	\[f''(t)=\expval{D^J(\bar x+tv)v,v}.\]
+	
+	Comme $\bar x$ est solution de (P), $\bar t=0$ est solution optimale de
+	\[\min\{f(t):t\in\R\}\]
+	donc $f'(0)=0$ et $f''(0)≥0$ car $f'(0)=\lim_{t\to 0^+}\frac{f(t)-f(0)}t≥0$ et $f'(0)=\lim_{t\to 0^-}\frac{f(t)-f(0)}t≤0$ donc $f'(0)=0$. 
+	
+	Donc par la formule de Taylor-Yougn:
+		\[f(t)=f(0)+f'(0)(t-0)+\frac{f''(0)}2(t-0)^2+o(t^2).\]
+	Où $o(t^2)=ε(t)t^2, ε(t)\to 0$.
+	donc ($\frac{f''(0)}2+o(1))t^2=f(t)-f(0)≥0$ donc $\frac{f''(0)}2+o(1)≥0$ en faisant $t\to$ : $\frac{f''(0)}2≥0$
+	
+	Donc:
+	$\forall v\in\R^d\quad \expval{\grad J(\bar x),v}=0$ et $\expval{D^2J(\bar x),v}≥0$
+	
+\end{proof}
+\begin{remark}
+	Les conditions $\grad J(\bar x)=0$; $D^2J(\bar x)≥0$ ne sont pas suffisantes:
+	in suffit de considérer $\mqty{J:\R&->\R\\x&|->x^3}$ alors $J'(0)=0$ et $J''(0)=0≥0$ mais $0$ ne minimise par $J$ sur $\R$.
+	
+	Mais sous les hypothèses: $\grad J(\tilde x)=0$; $D^2J(\tilde x)≥αI$ avec $α>0$ on obtient que $\tilde x$ est un minimiseur \texttt{local} de $J$: il existe $n>0$ tel que $\tilde x$ est solution de
+		\[\min\{J(x):x\in B(\tilde x, r)\]
+\end{remark}
+% f or b this letter siginifies a position of the following problem
+f) contraintes égalité on suppose:
+	\[X=\{x\in\R^d:\ \forall i\in\{1,...,q\}, h_i(\bar x)=0\}\]
+	
+\begin{rappel}
+	L'espace tangent à X au point \tilde x est donné par:
+		\[T_X(\tilde x)=\{c'(0):\ c\inφ^1(]-ε,ε[,X),c(0)=\tilde x\}\]
+\end{rappel}
+\begin{definition}
+	Les contraintes de $X$ sont régulières au point $\tilde x$ si la famille $(\grad h_i(\tilde x))_i$ est libre.
+\end{definition}
+\begin{property}
+	Si les contraintes de $X$ sont régulières en $\tilde x$ alors:
+		\[T_X(\tilde x)=(\vect(\grad h_i(\tilde x))_{i\in\{1,...,n})^\perp\]
+\end{property}
+\begin{example}
+	$X=\{x\in\R^2: x_1^2+x_2^2=1\}=\{x\in\R^2:h_1(0)=0\}$ où $h_1(x_1,x_2)=x_1^2+x_2^2-1$ alors \grad $h_1(x_1,x_2)=\smqty{2x_1\\2x_2}$ donc les constraintes de $X$ sont régulières pour tout point $\tilde x$ de $X$:
+		\[\forall \tilde x\in X\quad \grad h_1(\tilde x)≠0)\]
+\end{example}
+\begin{proof}
+	$T_X(\tilde x)\subset (\vect(\grad h_i(\tilde x))_i)^\perp$
+	
+	Soit $v\in T_X(\tilde x)$, alors il existe $c\in φ^1(]-ε,ε[, X)$ tel que $c(0)=\tilde x$ et $c'(0)=v$.
+	
+	Comme $\forall t, c(t)\in X$ on a $\forall t\in]-ε,ε[$, $\forall i$, $h_i(c(t))=0$ donc $\forall i$, $\expval{\grad h_i(c(0)),c'(0)}=0$ donc $\forall i\ \expval{\grad h_i(\tilde x),v}=0$ donc $v\in (\vect(\grad h_i(\tilde x)_i))^\perp$
+	
+	$T_X(\tilde x)\supset (\vect(\ ))^\perp$ utilise le thm des fonctions implicites.
+\end{proof}
+\begin{theoreme}[multiplicateurs de Lagrange, extrême liés conditions KKT, Karush Kuhn Tucker]
+	Si \bar x est une solution optimale de 
+		\[(P)\ \min\{J(x):x\in X\}\]
+	et si les contraintes sont régulières en $\bar x$ alors: il existe $λ_1,...,λ_q$ dans $\R$ tels que:
+		\[ \grad J(\bar x)+∑_{i=1}^qλ_i\grad h_i(\bar x)=0\]
+		\[D^2J(\bar x)+∑_{i=1}^qλ_iD^2h_i(\bar x)≥0 sur T_X(\bar x)\]
+\end{theoreme}
+\begin{remark}
+	Les nombres $λ_1$, ...,$λ_2$ sont les multiplicateurs de Lagrange associés à ls solution $\bar x$, et on définit le Lagrangien:
+	\[\fdef{\mathcal{L}:\R^d\times\R^q&->\R\\(x,λ)|&->\L(x,λ)=J(x)+∑_{i=1}^q λ_ih_i(x)}\]
+	alors les onditions KKT peuvent se réecrire:
+		\[\mqty{\grad_x\L(\bar x,λ)=0\\D^2_x\L(\bar x,λ)≥0 sur T_x(\bar x)}\]
+\end{remark}
+\begin{proof}
+	Soit $v\in T_x(\bar x)$ alors il existe $c\in φ(]-ε,ε[,X)$ telle que $c(0)=\bar x$ et $c'(0)=v$. Si on pose $f(t)=J(c(t))$, alors $0$ est une solution optimale de $\min\{f(t):t\in]-ε,ε[\}$
+	
+	donc $f'(0)=0$ (1) et $f''(0)≥0$  (2) donc:
+	\begin{enumerate}[(1)]
+		\item $\forall v\in T_X(\bar x)$, $\expval{\grad J(\bar x),v}=0$ donc $\grad J(\bar x)\in T_X(\bar x)^\perp donc \grad J(\bar x)\in \vect((\grad h_i(\bar x))_i)$ donc $\exists λ_1,...,λ_q\in \R$ tel que
+		\[\grad J(\bar x)=-∑λ_i\grad h_i(\bar x)\]
+		\item \forall v\in T_X(\bar x), \expval{\grad^2J(\bar x)v,v}≥0 donc
+			\[\grad^2J(\bar x)≥0\ sur\ T_X(\bar x)\]
+	\end{enumerate}
+\end{proof}
+Conection!! 
+	\[\left\{\mqty{\grad^2J(\bar x)≥0\ sur\ T_X(\bar x)\\ dans\ KKT}\right.\]
+	
+\begin{exercise}
+	à l'aide de ces conditions résoudre:
+		\[\min\{x_1+x_2:\ x_1^2+x_2^2=1\}.\]
+\end{exercise}
+c) contraintes mixtes
+On suppose que $X=\{x\in\R^d:\ \forall$l$i\in\{1,...,q\}, h_i(x)=0 \forall j\in\{1,...,m\}, g_j(x)≤0\}$
+
+On définit le $\L$agrangien associé:
+	\[\df{J:\R^d\times(\R^q\times\R^m)&->\R\\(x,(λ,γ))&|->\L(x,λ,γ)}\] avec $\L(x,λ,γ)=J(x)+∑_iλ_ih_i(x)+∑_jγ_jg_j(x)$
+	
+\begin{theorem}[Fritz-John]
+	Soit $\bar x$ une solution optimale de $\min\{J(x):x\in X\}$ alors il existe $λ_0\in\R_+$, $λ_1,...,λ_q\in\R$ et $γ_1,...,γ_m\in\R_+$ tels que:
+		\[λ_0\grad J(\bar x)+∑_{i=1}^qλ_i\grad h_i(\bar x)+∑_{j=1}^mγ_j\grad g_j(\bar x)=0\]
+		et 
+		\[(λ_0,λ_1,...,λ_q, γ_1,...,γ_m)≠0,\]
+		\[\forall j, γ_jg_j(\bar x)=0.\]
+\end{theorem}
+\begin{remark}
+		Le cas le cas régulier non dégénéré est celui où $λ_0≠0$, au quel cas on peut supposer $λ_0=1$. On a alors
+			\[\grad_x\L(x,(λ,γ))=0\]
+	Le cas $λ_0=0$ implique que la famille ($(\grad h_i(\bar x))_i,(\grad g_i(\bar x))_j)$ est liée (lineary dependent).
+\end{remark}
+\begin{proof}
+	\begin{enumerate}
+		\item er cas: on suppose $J$ minorée sur $\R^d$:
+		\[\exists β\in\R\ \forall x\in\R^d\ J(x)≥β\]
+		Schéma de preuve:
+			\begin{itemize}[*]
+				\item on régularise le problème via une famille J_n
+				\item $\bar x_n$ minimise $J_n$: on montre $\bar x_n\to \bar x$
+				\item on utilise l'optimalité de $\bar x_n$ pour en déduire des informations sur $\bar x$.
+			\end{itemize}
+		On suppose qu'il existe $r>0$ tel que $\bar x$ est une solution de
+		\[\min\{J(x): x\in X, x\in B(\bar x, r)\}\]
+		on choisit $α>0$ tel que:
+		
+		\[β+α\norm{x-\bar x}^2<J(\bar x) \ssi \norm{x-\bar x}<r\]
+		
+	On définit alors:
+		\[J_n(x)=J(x)+α\norm{x-\bar x}^2+\frac{n}2∑_{i=1}^qh_i(x)^2+\frac n2∑_{j=1}^m\max(0,g_j(x))^2\]
+		
+		\begin{properties}
+			\begin{itemize}
+				\item $\forall x\in X$, $J_n(x)=J(x)+α\norm{x-\bar x}^2$ (car $h_i(x)=0$ et $\max (0,g_j(x))=0$)
+				\item $\forall x\in\R^d$, $J_n(x)≥J(x)+α\norm{x-\bar x}^2≥β+α\norm{x-\bar x}^2 $
+			\end{itemize}
+		\end{properties}
+		donc $\lim_{\norm{x}\to ∞}J_n(x)=+∞$.
+	\end{enumerate}
+	Soit $(x_k)_k$ une suite minimisante de $J_n$ sur $\R^d$: $\lim_{k\to ∞}J_n(x_k)=\inf_{\R^d}(J_n)$.
+	
+	Comme $\inf_{\R^d}(J_n)≤J_n(\bar x)=J(\bar x)<+∞$ on a $(x_k)_k$ est bornée.
+	
+	Donc on peut extraire de $(x_k)_k$ une sous-suite convergente vers $\bar x_n\in\R^d$.
+	
+	Si $J$, $h_i$, $g_j$ sont continues, alors $J_n$ est continue et $\bar x_n$ est une solution de $\min\{J_n(x)\ x\in\R^d\}$.
+	
+	\texttt{On démontre que} $\bar x_n\to \bar x$, $n\to ∞$.
+	
+	On a en effet les inégalités: 
+	$β+α\norm{\bar x_n-\bar x}^2≤J_n(\bar x_n)≤J_n(\bar x)≤J(\bar x)$
+	
+	donc $(\bar x_n)_n$ est bornée on peut en extraire une sous-suite qui converge dans $\R^d$ vers $\bar x_∞$.
+	
+	Or: pour tout $n$, $J(\bar x)≥J_n(\bar x_n)≥J(\bar x_n)+α\norm{\bar x_n-\bar x}^2$ donc 
+	
+	\[\boxed{ J(\bar x)≥J(\bar x_∞)+α\norm{\bar x_∞-\bar x}^2}\]
+	
+	donc par définition de $α$ on a: $\norm{\bar x_∞-\bar x}<r$.
+	
+	De plus:
+	
+	\[J_n(\bar x_n)=J(\bar x_n)+α\norm{\bar x_n-\bar x}^2+\frac n2∑_ih_i(\bar x_n)^2+\frac n2∑_j\max(0,g_j(\bar x_n))^2\]
+	
+	or $J_n(\bar x_n)≤J(\bar x)$ et 
+	\[\df{J(\bar x_n)&\to J(\bar x_∞)\\\norm{\bar x_n-\bar x}^2&\to \norm{\bar x_∞-\bar x}^2}\]
+	
+	donc
+	
+	\[\frac n2(∑h_i(\bar x_n)^2+∑max(0,g_j(\bar x_n))^2)\] est bornée donc:\\
+	$\forall i h_i(\bar x_n)^2\to 0$\\
+	$\forall j \max (0,g_j(\bar x_n))^2\to 0$
+	
+	donc
+	\[\mqty{\forall i\ h_i(\bar x_∞)=0\\\forall j\ g_j(\bar x_∞)}≤0\]
+	
+	donc $\bar x_∞\in X$ donc par optimalité de $\bar x$: $J(\bar x)≤J(\bar x_∞)$ or $J(\bar x)≥J(\bar x_∞)+α\norm{\bar x_∞-\bar x}^2 donc \boxed{\bar x_∞=\bar x}$
+
+%end tierry champinion lecture January 31 2018
+%begin tierry champinion lecture Ferbruary 1 2018
+	
+	On écrit la condition d'optimalité par $\bar x_n$:
+	
+	\begin{remark}
+		La fonction $\df{f:\R&->\R\\t&|->\max(0,t)^2}$ est de classe $C^1$ et $f'(t)=2\max(0,t).$
+	\end{remark}
+	
+	Donc si $J$, $h_1$, $h_2$, ... ,$h_q$, $g_1$, ... ,$g_m$ de classe $C^1$ alors $J_n$ est de classe $C^1$ et on peut écrire $\grad J_n(\bar x_n)=0$ c'est-à-dire:
+	\[\grad J(\bar x_n)+2α(\bar x_n-\bar x)+∑_{i=1}^q nh_i(\bar x_n)\grad h_i(\bar x_n)+∑_{j=1}^nn\max(0, g_j(\bar x_n))\grad g_j(\bar x_n)=0.\]
+	
+	\noindent
+	-* si on suppose que les suites $(λ_i^n)_{n≥0}$ et $(γ_j^n)_{n≥0}$ sont toutes bornées, on peut extraire des sous-suites convergentes:
+	\[\forall i\ λ_i^n\to λ_i\qquad \forall j\ γ_j^n\to γ_j\]
+	et comme $\bar x_n\to \bar x$ on a:
+	\[\boxed{\grad J(\bar x)+0+∑_iλ_i\grad h_i(\bar x)+∑γ_j\grad g_j(\bar x)=0}\]
+	de plus:$ \forall j\forall n\ γ_j^n=n\max(0,g_j(\bar x_n))≥0$ donc $\boxed{\forall j\ γ_j≥0}$. Et enfin: 
+	\begin{itemize}
+		\item si $g_j(\bar x)=0$ alors $γ_jg_j(\bar x)=0$
+		\item si $g_j(\bar x)<0$ alors pour $n$ grand on a:
+		\[γ_j^n=n\times \max(0,\underbrace{g_j(\bar x_n)}_{\to g_j(\bar x)<0})=0\]
+	\end{itemize}
+	Donc $γ_j=0$ donc $γ_jg_j(\bar x)=0$.
+	
+	\noindent
+	-* si on suppose que au moins une des suites $(λ_i^n)_{n≥0}$ ou $(γ_j^n)_{n≥0}$ n'est pas bornée: on divise alors $\grad J(\bar x_n)$ par $\max_{i,j}\{|λ_i^n|,γ_j^n\}=κ_n$ où on peut supposer que $κ_n\to +∞$. On a alors:
+	\[\frac1{κ_n}\grad J(\bar x_n)+\frac{2α}{κ_n}(\bar x_n-\bar x)+∑_i\frac{λ_i^n}{κ_n}\grad h_i(\bar x_n)+∑_j\frac{γ_j^n}{κ_n}\grad g_j(\bar x_n)=0\]
+	
+	Par définition de $κ_n$, les suites $(\frac{λ_i^n}{κ_n})_{n≥0}$ et $(\frac{γ_j^n}{κ_n})_{n≥0}$ sont dans $[-1,1]$ et on peut supposer (après extraction d'une sous-suite) que l'une d'elle tend vers $1$ ou $-1$.
+	
+		On note à nouveau $λ_i$ et $γ_j$ les limites de ces suites, alors:
+		$0\times \grad J(\bar x)+∑λ_i\grad h_i(\bar x)+∑γ_j\grad g_j(\bar x)=0 avec \forall j_1\ γ_j≥0 et γ_j g_j(\bar x)=0$
+		
+		\[(λ_1,...,λ_q,γ_1,...,γ_m)≠0\]
+		
+		car l'un vaut $1$ ou $-1$.
+		
+		2ème cas si J n'est pas minorée sur $\R^$$d$ on considère $\df{\tilde J:\R^d&->\R\\x&|->J(x)+(J(x)-J(\bar x))^2}$
+		
+		alors
+		\begin{itemize}
+			\item $\bar J$ est minorée sur $\R^d$
+			\item $\bar x$ est solution de $\min\{\tilde J(x):x\in X\}$
+			\item $\grad \tilde J(\bar x)=\grad J(\bar x)$
+		\end{itemize}
+	on peut appliquer le premier cas à $\tilde J$.
+	
+	\begin{remark}
+		Est vraie car $\df{\R&->\R\\y&|-> y+(y-J(\bar x))^2}$ est minorée sur $\R$ (atteint son minimum en $y=J(\bar x)-\frac 12$)
+	\end{remark}
+
+\end{proof}
+
+Exemple d'emploi:
+Sut un problème de programmation linéaire:$ \min\{x_2-2x_1:\ x_1≥0, x_2-4x_1≤4, x_2-x_1≤-1\}$
+
+ici:
+\begin{align*}
+	J(x_1,x_2)&=x_2-2x_1\\
+	g_1(x_1,x_2)&=-x_1\\
+	g_2(x_1,x_2)&=x_2-4x_1-4\\
+	g_3(x_1,x_2)&=x_1-x_2-1
+\end{align*}
+et ce problème au moins une solution car $X$ est ferme et borné dans $\R^2$ et $J$ est continue.
+
+Soit $\bar x$ une solution, alors il existe $λ_0≥0$, $γ_1≥0$, $γ_2≥0$, $λ_3≥0$ tels que:
+
+$\left\{\mqty{λ_0\vc{-2\\1}+γ_1\vc{-1\\0}+γ_2\vc{4\\1}+γ_3\vc{1\\-1}=0}\\γ_1(-\bar x_1)=0\\γ_2(\bar x_2+4\bar x_1-4)=0\\γ_3(\bar x_1-\bar x_2-1)=0}\right.$
+
+\noident
+-* si $γ_1≠0$ alors $\bar x_1=0$
+donc $\sys{γ_2(\bar x_2-4)=0\\γ_3(-\bar x_2-1)=0}$\\
+-* si $γ_2≠0$ alors $\bar x_2=4$ et $γ_3=0$ donc $\bar x=(0,4)$ et on doit trouver $λ_0≥0$ tel que
+	\[λ_0\vc{-2\\1}+γ_1\vc{-1\\0}+γ_2\vc{4\\1}=0\]
+donc $λ_0+γ_2=0$ impossible donc $\boxed{γ_2=0}$\\
+-* si $γ_3≠0$ alors $\bar x_2=-1$ et on cherche $λ_0≥0$ tel que:
+	\[λ_0\vc{-2\\1}+γ_1\vc{-1\\0}+γ_3\vc{1\\-1}=0\]
+	<=>
+	$\sys{-2λ_0-γ_1+γ_3=0\\λ_0-γ_3=0}$
+	<=>
+	$\sys{λ_0=γ_3\\γ_1=-γ_3} => γ_1=γ_3=0$
+	car $γ_1,γ_3≥0 $impossible car $γ_1≠0$ on a donc $\boxed{γ_1=0}$\\
+-* comme $\grad g_2(\bar x)=\vc{4\\1}$ et $\grad g_3(\bar x)=\vc{1\\-1}$ sont linéairement indépendants on a forcément $λ_0≠0$ donc on peut supposer $λ_0=1$. On cherche alors $γ_2,γ_3≥0$ tels que:
+\[\vc{-2\\1}+γ_2\vc{4\\1}+γ_3\vc{1\\-1}=0\]
+<=>
+$\sys{4γ_2+γ_3=2\\γ_2-γ_3=-1} $
+<=>
+$\sys{γ_3=\frac63\\γ_2=\frac 13}$
+$γ_2>0$ et $γ_3>0$
+$g_2(\bar x)=0$ et $g_3(\bar x)=0$
+c'est-à-dire $\bar x=(1,0)$.
+
+\begin{vocabulaire}
+	\begin{itemize}[*]
+		\item la condition $\forall j\in\{1,...,m\}$, $γ_jg_j(\bar x)=0$ s'appelle condition de complémentarité.
+		\item on dit qu'on a complémentarité strict lorsque:
+		\[\forall j,\ γ_j≠0\text{ ou }g_j(\bar x)≠0\]
+		(on a toujours $γ_jg_j(\bar x)=0$ mais par $γ_j=0$ et $g_j(\bar x)=0$)
+		\item la contrainte g_j est active en $\bar $$x$ si $g_j(\bar x)=0$ et inactive si $g_j(\bar x)<0$
+		\item en cas de complémentarité stricte, g_j est active en \bar x si et seulement si γ_j≠0 en \bar x. 
+	\end{itemize}
+\end{vocabulaire}
+
+\begin{remark}
+	dans la preuve du théorème, on a montre que \min_{\R^d}\{J_n\} a au moins une solution en remarquant que
+		\[\lim_{\norm{x}\to +∞}J_n(x)=+∞ (C)\]
+		
+	On dit que $J_n$ est coursive quand (c) est vérifiée (dans $\R^d$).
+	Si $(Ω, T)$ est un espace topologique et $J:Ω->\R$ continue, on dit que $J$ est coercive si pour tout$ α\in\R$ $\{ω\in Ω:\ J(ω)≤α\}$ est compact dans $Ω$.
+\end{remark}
+% section contraintes_libres (end)
+\section{Méthode de la plus grande} % (fold)
+\label{sec:methode_de_la_plus_grande}
+(ou méthode du gradient)
+La méthode de la plus grande pente est la méthode numérique la plus simple et l'une des plus anciennes pour résoudre:
+ \[(P)\ \min\{J(x):\ x\in\R^d\]
+ 
+Cette méthode consiste à construire une suite récurrente $(x^n)_{n≥0}$ dans $\R^d$ via la méthode interactive:
+$\sys{x^º fixe\\ \forall n≥0, x^{n+1}=x^n-δ_n\grad J(x^n)}$
+
+avec $δ_n>0$ pour tout $n$.
+
+Propriétés attendues:\\
+-* si $(x^n)_{n≥0}$ converge vers $\bar x$ et $δ_n>δ>0$ alors:
+-$\grad J(x_n)=\frac{x^{n+1}-x^n}{δ_n}\to 0$ => $\grad J(\bar x)=0$ donc à la limite on obtient un point critique $\bar x$.\\
+-* par la formule de Taylor à l'ordre $1$:
+
+$J(x^{n+1})=J(x^n)+\expval{\grad J(x^n), x^{n+1}-x^n}+ε(x^{n+1}-x^n)\norm{x^{n+1}-x^n}=J(x^n)\underbrace{-δ_n\norm{\grad J(x^n)}^2}_{≤0}+ε(x^{n+1}-x^n)\norm{x^{n+1}-x^n}$
+
+donc on espère $J(x^{n+1})≤J(x^n)$ c'est-à-dire que la suite $(J(x^n))_{n≥0}$ des valeurs est décroisante.
+
+Pour obtenir ces deux propriétés on suppose en général $J$ convexe.
+% this is 3 section in tierri's lectures
+
+% section methode_de_la_plus_grande (end)
+\section{Rappels sur le fonctions convexes en dimension 1} % (fold)
+\label{sec:rappels_sur_le_fonctions_convexes_en_dimension_1}
+$f$ est convexe sur $\R$ <=> $\forall x_0,x_1\forall t\in[0,1]\ f((1-t)x_0+tx_1)≤(1-t)f(x_0)+tf(x_1)$ <=> $f'$ est croissante sur $\R$ <=> $f''≥0$ sur $\R$.
+
+En dimension $d$ $f$ est convexe sur $\R^d$ <=> $\forall x_0,x_1\forall t\in [0,1]\ f((1-t)x_0+tx_1)≤(1-t)f(x_0)+tf(x_1)$
+<=> $\forall x,v\in\R^d$, $g_{x,v}:t|->f(x+tv)$ est continue sur $\R$
+<=>(m) $\grad f$ est monotone au $\R^d$.
+
+\[\boxed{\forall x_0,x_1\ \expval{\grad f(x_1)-\grad f(x_0),x_1-x_0}≥0}\]
+<=> $D^2f(x)≥0$ sur $\R^d$ pour tout $x\in\R^d$
+
+\begin{proof}
+	Preuve de =>(m) soit $x_0$, $x_1$ dans $\R^d$, on pose $x=x_0$, $v=x_1-x_0 $comme $g_{x,v}:t|->f(x_0+t(x_1-x_0))$ est convexe, on a $g'(1)≥g'(0)$ or $g'(t)=\expval{\grad f(x_0+tv),v}=\expval{\grad f(x_0+t(x_1-x_0)),x_1-x_0}$ donc $\expval{\grad f(x_1),x_1-x_0}≥\expval{\grad f(x_0),x_1-x_0}$.
+\end{proof}
+\begin{property}
+	Le graphe d'une fonction convexe est au-dessous de ses espaces tangents:
+		\[\forall x,z\ f(z)≥f(x)+\expval{\grad f(x),z-x}\]
+\end{property}
+en particulier:
+\begin{lemme}
+	Soit $J:\R^d->\R$ convexe. Alors $\bar x$ est solution de 
+		\[(P)\ \min\{J(x):\ x\in\R^d\}\]
+		si et seulement si 
+		\[\grad J(\bar x)=0\]
+\end{lemme}
+\begin{proof}
+	=> toujours vrai
+	<= comme $J$ convexe:
+	\[\forall x\in\R^d\qquad J(x)≥J(\bar x)+\expval{\grad J(\bar x),x-\bar x}=J(\bar x)\]
+\end{proof}
+\begin{proof}
+de propriété; on pose $v=z-x$, alors $g_{x,v}(t)=f(x+t(z-x)) $et on a:
+	 \[g(1)-g(0)=∫_0^1g'(t)\dd{t}≥∫_0^1g'(0)\dd{t}=g'(0)\]
+	 or
+	 $g(1)=f(z),g(0)=f(x)$\\
+	 $g'(t)=\expval{\grad f(x+t(z-x)),z-x}, g'(0)=\expval{\grad f(x),z-x}$
+\end{proof}
+
+% end of tierry lecture 1 february 2018
+% begin of tierry lecture Feb 7
+\begin{remark}
+	Comment démontrer qu'une fonction $f:\R^d->\R$ est convexe sur $U$ convexe?
+\end{remark}
+Methode 1 on démontre que $D^2f≥0$ sur $U$, on de manière équivalente on démontre que pour tout $u\in U$ et tout $v\in\R^d$ la fonction
+	\[\df{g:\R&->\R\\t&|->ρ(u+tu)}\]
+	est convexe au voisinage de $0$.
+	
+\begin{rappel}
+	\[g''(0)=\ps{D^2ρ(u)v}{v}\]
+\end{rappel}
+Méthode 2 si $ρ=hºφ$ avec $φ:\R^d->\R$ convexe sur $U$ et $h:\R->\R$ croissante et convexe au $φ(U)$ alors $f$ est convexe.
+
+\begin{proof}
+	Pour tous $x,y\in U$ et $t\in[0,1]$ on a:
+		\[φ((1-t)x+ty)≤(1-t)φ(x)+tφ(y)\]
+	Donc \[h(φ((1-t)x+ty))≤h croissante ≤ h((1-t)φ(x)+tφ(y))≤h convexe ≤(1-t)h(φ(x))+th(φ(y))\]
+	donc $f((1-t)x+ty)≤(1-t)f(x)+f(y)$.
+\end{proof}
+\begin{example}
+	$\df{f:\R^d&->\R\\x&|->\norm{x}^2}$ où $\norm{•}$ est la norme Euclidienne.
+	
+	Méthode 1. soit $u,v\in\R^d$ on pose $\df{g:\R&->\R\\t|->\norm{u+tv}^2}$ alors 
+		\[g(t)=\norm{u+tv}^2=\norm{u}^2+2t\ps{u,v}+t^2\norm{v}^2\]
+		donc $g''(t)=2\norm{v}^2≥0$
+		
+		donc $f$ est convexe et $D^2f(u)=2Id$ par tout $u$.
+	
+	Méthode 2
+	$f=hºφ$ avec $\df{φ:\R^d&->\R\\x&|->\norm{x}}$ et \df{h:\R&->\R\\t|->t^2} alors φ est convexe sur \R^d (c'est la norme !) et h est convexe et croissante sur
+	\[\R_+=φ(\R^d)\]
+	donc f est convexe.
+\end{example}
+b) version continue de la méthode de la plus grande pente 
+On réécrit la formule itérative
+	 \[x^{n+1}=x^n-δ_n\grad J(x^n)\]
+	 par définition
+	 \[\frac{x^{n+1}-x^n}{δ_n}=-\grad J(x^n)\]
+	 
+	 On définit alors une courbe $\df{x:\R_+&->\R^d\\t&|->x(t)}$.
+	 
+	 En posant 
+	 $\left\{\mqty{t_0=0\\x(t_0)=x(0)=x^0\\\forall n≥0\ t_{n+1}=t_n+δ_n\\\text{et }x(t_{n+1})=x(t_n)-δ_n\grad J(x(t_n))}\right.$
+	 
+	 et on prolonge $x$ de manière affine au les segments
+	 	$[t_n,t_{n+1}]$.
+		
+	Lorsque δ_n>0 est petit cette méthode est la méthode d'Euler par résoudre l'équation différentielle.
+	
+	(SD) $\le$$ft\{\mqty{x(0)=x^0\\\forall t≥0, x'(t)=-\grad J(x(t))}\right$.
+	
+	Car $\frac{x(t_{n+1})-x(t_n)}{δ_n}=-\grad J(x(t_n))\simeq x'(t_n)$ ($δ_n\to 0$)
+	
+	Quand $δ_n$ est petit, on peut s'attendre à ce que le comontement asymptotique de la suite $(x^n)_{n≥0}$ et de "la" solution $x$ de (SD) sont identiques:
+	$\lim x^n\simeq \lim_{t\to ∞}x(t)$
+	
+	\begin{theorem}
+		Si $J$ est convexe de classe $C^2$ sur $\R^d$ et si $\inf\{J:\R^d\}$ a au moins une solution, alors pour tout $x^0\in\R^d$, le système dynamique (SD) admet une unique solution $x:\R_+->\R^d$ et
+		\[\lim_{t\to +∞}x(t)=x^∞\]
+		
+	où $x^∞$ est un minimiseur de $J$:
+		\[J(x^∞)=\inf_{\R^d}\{J\}\]
+		
+\end{theorem}
+\begin{example}
+	On définit $J:\R->\R$ par:
+	\[J(x)=\left\{\mqty{x^n si x≤0\\0 si x\in[0,1]\\(x-1)^n si x≥1}\right.\]
+	
+	Soit $x:\R_+->\R$ la solution de
+	\[\right\{\mqty{x(0)=x^0\\\forall t≥0,\ x'(t)=-J'(x(t))}\left.\]
+	
+	Si $x^0≤0$ alors $x(t)\to0$, $t\to+∞$. Si $x^0\in [0,1]$ alors $\forall t$, $x(t)=x^0 $si $x^0≥1$ alors $x(t)\to 1$, $t\to+∞$. Sur cet exemple, $\lim_{t\to +∞}x(t)$ est bien dune solution de $\min\{J(y),y\in\R\}$, et cette limite dépend de $x^0$.
+\end{example}
+
+On définit $ψ:\R^+->\R$ telle que $t|->\norm{\grad J(x(t))}^2$ alors $ψ$ est décroisante sur $\R_+$. La dérivée de $t|-> \grad J(x(t))$ est 
+\begin{align*}
+	t&|->D^dJ(x(t))•x'(t)\\
+	&=D^2J(x(t))x(-\grad J(x(t)))\\
+	&=-D^2J(x(t))\grad J(x(t))
+\end{align*}
+et le gradient de $ξ |->\norm{ξ}^2$ est $ξ|-> 2ξ$.
+
+donc $ψ'(t)=-\ps{D^2J(x(t))\grad J(x(t))}{\grad J(x(t))}≤0$ car $J$ convexe donc $D'J≥0$ 
+
+donc $ψ'(t)≤0$.
+
+-* Bilan
+$∫^{+∞}\norm{\grad J(x(t))}^2\dd{t}$ converge et $t|->\norm{\grad J(x(t))}^2$ est décroissante sur $\R_+$.
+
+donc $\norm{\grad J(x(t))}^2\to 0$, $t\to +∞$, donc $\lim_{t\to+∞}\grad J(x(t))=0$, donc $\lim_{t\to 0}\grad J(x(t))=0$.
+% end of tierry lec Feb 7
